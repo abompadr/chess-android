@@ -23,7 +23,8 @@ data class GameState(
     val status: GameStatus = GameStatus.PLAYING,
     val engineThinking: Boolean = false,
     val playerIsWhite: Boolean = true,
-    val lastMove: Pair<Square, Square>? = null
+    val lastMove: Pair<Square, Square>? = null,
+    val errorMessage: String = ""
 )
 
 class GameViewModel(app: Application) : AndroidViewModel(app) {
@@ -53,7 +54,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 startTimer()
                 if (!playerIsWhite) engineMove()
             } catch (e: Exception) {
-                _state.value = _state.value.copy(status = GameStatus.ENGINE_ERROR)
+                _state.value = _state.value.copy(
+                    status = GameStatus.ENGINE_ERROR,
+                    errorMessage = e.javaClass.simpleName + ": " + (e.message ?: "null")
+                )
             }
         }
     }
@@ -118,7 +122,11 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                 _state.value = _state.value.copy(engineThinking = false)
             }
         } catch (e: Exception) {
-            _state.value = _state.value.copy(engineThinking = false, status = GameStatus.ENGINE_ERROR)
+            _state.value = _state.value.copy(
+                engineThinking = false,
+                status = GameStatus.ENGINE_ERROR,
+                errorMessage = e.javaClass.simpleName + ": " + (e.message ?: "null")
+            )
         }
     }
 

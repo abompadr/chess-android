@@ -99,7 +99,7 @@ fun GameScreen(profile: Profile, onBack: () -> Unit, vm: GameViewModel = viewMod
         val msg = when (state.status) {
             GameStatus.WHITE_WIN    -> "White wins!"
             GameStatus.BLACK_WIN    -> "Black wins!"
-            GameStatus.ENGINE_ERROR -> "Engine failed to load"
+            GameStatus.ENGINE_ERROR -> "Engine error:\n${state.errorMessage}"
             else                    -> "Draw"
         }
         GameOverOverlay(msg, onBack)
