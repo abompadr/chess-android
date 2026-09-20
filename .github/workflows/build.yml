@@ -27,11 +27,10 @@ jobs:
       - name: Download Stockfish for Android ARM64
         run: |
           mkdir -p app/src/main/assets
-          curl -L "https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-android-armv8.zip" \
-            -o stockfish.zip
-          unzip -o stockfish.zip
-          # find the binary inside the zip and copy to assets
-          find . -name "stockfish*" -type f ! -name "*.zip" | head -1 | xargs -I{} cp {} app/src/main/assets/stockfish
+          curl -L "https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-android-arm64-universal.tar.gz" \
+            -o stockfish.tar.gz
+          tar -xzf stockfish.tar.gz
+          find . -name "stockfish*" -type f ! -name "*.tar.gz" | head -1 | xargs -I{} cp {} app/src/main/assets/stockfish
           chmod +x app/src/main/assets/stockfish
 
       - name: Decode keystore
