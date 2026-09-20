@@ -65,12 +65,14 @@ class StockfishEngine(private val context: Context) {
 
     private fun extractBinary(): File {
         val dest = File(context.filesDir, "stockfish")
-        if (!dest.exists()) {
+        if (!dest.exists() || dest.length() == 0L) {
+            dest.delete()
             context.assets.open("stockfish").use { input: InputStream ->
                 dest.outputStream().use { input.copyTo(it) }
             }
             dest.setExecutable(true)
         }
+        if (!dest.canExecute()) dest.setExecutable(true)
         return dest
     }
 }

@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-enum class GameStatus { PLAYING, WHITE_WIN, BLACK_WIN, DRAW }
+enum class GameStatus { PLAYING, WHITE_WIN, BLACK_WIN, DRAW, ENGINE_ERROR }
 
 data class GameState(
     val board: ChessBoard = ChessBoard(),
@@ -47,10 +47,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             playerIsWhite = playerIsWhite
         )
         viewModelScope.launch {
-            engine.start()
-            engine.setSkillLevel(p.skillLevel)
-            startTimer()
-            if (!playerIsWhite) engineMove()
+            try {
+                engine.start()
+                engine.setSkillLevel(p.skillLevel)
+                startTimer()
+                if (!playerIsWhite) engineMove()
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(status = GameStatus.ENGINE_ERROR)
+            }
         }
     }
 
@@ -99,18 +103,22 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun engineMove() {
         val s = _state.value
         _state.value = s.copy(engineThinking = true)
-        val thinkMs = 1500
-        val uci = engine.getBestMove(thinkMs)
-        if (uci.isNotEmpty() && uci != "(none)") {
-            val move = com.chess.app.engine.Move.fromUci(uci)
-            _state.value.board.applyUci(uci)
-            _state.value = _state.value.copy(
-                engineThinking = false,
-                lastMove = move.from to move.to
-            )
-            checkGameOver()
-        } else {
-            _state.value = _state.value.copy(engineThinking = false)
+        try {
+            val thinkMs = 1500
+            val uci = engine.getBestMove(thinkMs)
+            if (uci.isNotEmpty() && uci != "(none)") {
+                val move = com.chess.app.engine.Move.fromUci(uci)
+                _state.value.board.applyUci(uci)
+                _state.value = _state.value.copy(
+                    engineThinking = false,
+                    lastMove = move.from to move.to
+                )
+                checkGameOver()
+            } else {
+                _state.value = _state.value.copy(engineThinking = false)
+            }
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(engineThinking = false, status = GameStatus.ENGINE_ERROR)
         }
     }
 
