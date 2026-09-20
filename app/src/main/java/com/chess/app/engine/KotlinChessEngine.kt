@@ -326,7 +326,7 @@ class KotlinChessEngine {
     )
 
     private fun cloneBoard(b: ChessBoard) = BoardSnapshot(
-        Array(8) { b.get(it, 0).let { _ -> IntArray(8) { f -> b.get(it, f) } } },
+        Array(8) { r -> IntArray(8) { f -> b.get(r, f) } },
         b.whiteToMove, b.castling, b.enPassant, b.halfMoveClock, b.fullMoveNumber
     )
 
@@ -350,7 +350,6 @@ class KotlinChessEngine {
         private val BISHOP_DIRS  = arrayOf(intArrayOf(-1,-1),intArrayOf(-1,1),intArrayOf(1,-1),intArrayOf(1,1))
         private val ROOK_DIRS    = arrayOf(intArrayOf(-1,0),intArrayOf(1,0),intArrayOf(0,-1),intArrayOf(0,1))
         private val QUEEN_DIRS   = BISHOP_DIRS + ROOK_DIRS
-        private val KING_DELTAS  = QUEEN_DIRS + arrayOf(intArrayOf(-1,-1),intArrayOf(-1,1),intArrayOf(1,-1),intArrayOf(1,1),
-            intArrayOf(-1,0),intArrayOf(1,0),intArrayOf(0,-1),intArrayOf(0,1))
+        private val KING_DELTAS  = QUEEN_DIRS  // king moves exactly like queen, one square
     }
 }
