@@ -65,6 +65,7 @@ class ChessBoard {
 
     fun get(sq: Square) = board[sq.rank][sq.file]
     fun get(rank: Int, file: Int) = board[rank][file]
+    fun setInternal(rank: Int, file: Int, value: Int) { board[rank][file] = value }
 
     fun applyUci(uci: String) {
         val move = Move.fromUci(uci)
