@@ -1,0 +1,8 @@
+.gradle/
+build/
+*.jks
+local.properties
+.idea/
+*.iml
+.DS_Store
+github_secrets.txt
