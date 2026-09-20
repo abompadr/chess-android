@@ -41,6 +41,9 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        noCompress += listOf("stockfish")
+    }
 }
 
 dependencies {
