@@ -92,9 +92,10 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun engineMove() {
         _state.value = _state.value.copy(engineThinking = true)
         try {
-            val board = _state.value.board
+            // Deep-copy the board so the search never touches the UI-observed board
+            val boardCopy = _state.value.board.deepCopy()
             val uci = withContext(Dispatchers.Default) {
-                engine.bestMove(board, skillLevel)
+                engine.bestMove(boardCopy, skillLevel)
             }
             if (uci.isNotEmpty()) {
                 val move = Move.fromUci(uci)

@@ -67,6 +67,18 @@ class ChessBoard {
     fun get(rank: Int, file: Int) = board[rank][file]
     fun setInternal(rank: Int, file: Int, value: Int) { board[rank][file] = value }
 
+    fun deepCopy(): ChessBoard {
+        val copy = ChessBoard()
+        for (r in 0..7) for (f in 0..7) copy.board[r][f] = board[r][f]
+        copy.whiteToMove = whiteToMove
+        copy.castling = castling
+        copy.enPassant = enPassant
+        copy.halfMoveClock = halfMoveClock
+        copy.fullMoveNumber = fullMoveNumber
+        copy.moveHistory.addAll(moveHistory)
+        return copy
+    }
+
     fun applyUci(uci: String) {
         val move = Move.fromUci(uci)
         val piece = board[move.from.rank][move.from.file]
