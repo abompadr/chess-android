@@ -87,11 +87,7 @@ fun GameScreen(profile: Profile, onBack: () -> Unit, vm: GameViewModel = viewMod
         // White timer (bottom)
         TimerBar(state.whiteTimeMs, state.board.whiteToMove && state.status == GameStatus.PLAYING, "White")
 
-        if (state.engineThinking) {
-            Text("Thinking...", color = Color(0xFF8888AA), fontSize = 12.sp, modifier = Modifier.padding(4.dp))
-        } else {
-            Spacer(Modifier.height(20.dp))
-        }
+        Spacer(Modifier.height(20.dp))
     }
 
     // Game-over overlay
