@@ -4,7 +4,6 @@ import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.InputStream
 
 class StockfishEngine(private val context: Context) {
 
@@ -64,15 +63,12 @@ class StockfishEngine(private val context: Context) {
     }
 
     private fun extractBinary(): File {
-        val dest = File(context.filesDir, "stockfish")
-        if (!dest.exists() || dest.length() == 0L) {
-            dest.delete()
-            context.assets.open("stockfish").use { input: InputStream ->
-                dest.outputStream().use { input.copyTo(it) }
-            }
-            dest.setExecutable(true)
-        }
-        if (!dest.canExecute()) dest.setExecutable(true)
-        return dest
+        // Android 10+ marks filesDir as noexec — use the native lib dir instead,
+        // where libstockfish.so is installed by the package manager (always executable).
+        val nativeLib = File(context.applicationInfo.nativeLibraryDir, "libstockfish.so")
+        if (nativeLib.exists()) return nativeLib
+
+        // Fallback: should not be reached on a correctly built APK
+        throw IllegalStateException("Stockfish native library not found at ${nativeLib.absolutePath}")
     }
 }
