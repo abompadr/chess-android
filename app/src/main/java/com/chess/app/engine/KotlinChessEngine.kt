@@ -99,23 +99,25 @@ data class EngineMove(
 
 class KotlinChessEngine {
 
-    // Find best move at given skill level (0-20 mapped to depth 1-5)
+    // Find best move at given skill level (0-20 mapped to depth 1-4)
+    // Expert (skill 18-20) uses depth 4 with move ordering for stronger play
+    // without the StackOverflowError risk of depth 5.
     fun bestMove(board: ChessBoard, skillLevel: Int): String {
         val depth = when {
             skillLevel <= 3  -> 1
             skillLevel <= 7  -> 2
             skillLevel <= 12 -> 3
-            skillLevel <= 17 -> 4
-            else             -> 5
+            else             -> 4
         }
-        val moves = generateMoves(board)
+        val useOrdering = skillLevel >= 18
+        val moves = orderMoves(board, generateMoves(board), useOrdering)
         if (moves.isEmpty()) return ""
         var bestScore = -INF
         var bestMove = moves.first()
         for (move in moves) {
             val snapshot = cloneBoard(board)
             applyMove(board, move)
-            val score = -alphaBeta(board, depth - 1, -INF, INF)
+            val score = -alphaBeta(board, depth - 1, -INF, INF, useOrdering)
             restoreBoard(board, snapshot)
             if (score > bestScore) {
                 bestScore = score
@@ -125,9 +127,24 @@ class KotlinChessEngine {
         return bestMove.toUci()
     }
 
-    private fun alphaBeta(board: ChessBoard, depth: Int, alpha: Int, beta: Int): Int {
+    // Score a move for ordering: captures ranked by victim value - attacker value (MVV-LVA),
+    // promotions ranked highest. Higher score = search first.
+    private fun moveScore(board: ChessBoard, move: EngineMove): Int {
+        val victim = board.get(move.toRank, move.toFile)
+        val attacker = board.get(move.fromRank, move.fromFile)
+        return when {
+            move.promotion != Piece.EMPTY -> 20000
+            victim != Piece.EMPTY -> 10 * PIECE_VALUE[kotlin.math.abs(victim)] - PIECE_VALUE[kotlin.math.abs(attacker)]
+            else -> 0
+        }
+    }
+
+    private fun orderMoves(board: ChessBoard, moves: List<EngineMove>, enabled: Boolean): List<EngineMove> =
+        if (enabled) moves.sortedByDescending { moveScore(board, it) } else moves
+
+    private fun alphaBeta(board: ChessBoard, depth: Int, alpha: Int, beta: Int, useOrdering: Boolean): Int {
         if (depth == 0) return evaluate(board)
-        val moves = generateMoves(board)
+        val moves = orderMoves(board, generateMoves(board), useOrdering)
         if (moves.isEmpty()) {
             return if (inCheck(board, board.whiteToMove)) -MATE else 0
         }
@@ -135,7 +152,7 @@ class KotlinChessEngine {
         for (move in moves) {
             val snapshot = cloneBoard(board)
             applyMove(board, move)
-            val score = -alphaBeta(board, depth - 1, -beta, -a)
+            val score = -alphaBeta(board, depth - 1, -beta, -a, useOrdering)
             restoreBoard(board, snapshot)
             if (score >= beta) return beta
             if (score > a) a = score
