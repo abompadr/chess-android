@@ -11,6 +11,7 @@ import com.chess.app.engine.Piece
 import com.chess.app.engine.Square
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +41,14 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
     private var timerJob: Job? = null
     private var skillLevel: Int = 10
 
+    private val exceptionHandler = CoroutineExceptionHandler { _, t ->
+        _state.value = _state.value.copy(
+            engineThinking = false,
+            status = GameStatus.ENGINE_ERROR,
+            errorMessage = "Crash: ${t.javaClass.simpleName}: ${t.message}"
+        )
+    }
+
     fun startGame(p: Profile, playerIsWhite: Boolean = true) {
         skillLevel = p.skillLevel
         val timeMs = if (p.timeControlMinutes == 0) Long.MAX_VALUE / 2
@@ -52,7 +61,7 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
             playerIsWhite = playerIsWhite
         )
         startTimer()
-        if (!playerIsWhite) viewModelScope.launch { engineMove() }
+        if (!playerIsWhite) viewModelScope.launch(exceptionHandler) { engineMove() }
     }
 
     fun onSquareTapped(sq: Square) {
@@ -85,19 +94,30 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
         _state.value = s.copy(selected = null, lastMove = from to to)
         checkGameOver()
         if (_state.value.status == GameStatus.PLAYING) {
-            viewModelScope.launch { engineMove() }
+            viewModelScope.launch(exceptionHandler) { engineMove() }
         }
     }
 
     private suspend fun engineMove() {
         _state.value = _state.value.copy(engineThinking = true)
-        try {
-            // Deep-copy the board so the search never touches the UI-observed board
-            val boardCopy = _state.value.board.deepCopy()
-            val uci = withContext(Dispatchers.Default) {
+        val boardCopy = _state.value.board.deepCopy()
+        val uci = withContext(Dispatchers.Default) {
+            try {
                 engine.bestMove(boardCopy, skillLevel)
+            } catch (t: Throwable) {
+                "ERROR:${t.javaClass.simpleName}:${t.message}"
             }
-            if (uci.isNotEmpty()) {
+        }
+        if (uci.startsWith("ERROR:")) {
+            _state.value = _state.value.copy(
+                engineThinking = false,
+                status = GameStatus.ENGINE_ERROR,
+                errorMessage = uci
+            )
+            return
+        }
+        if (uci.isNotEmpty()) {
+            try {
                 val move = Move.fromUci(uci)
                 _state.value.board.applyUci(uci)
                 _state.value = _state.value.copy(
@@ -105,15 +125,15 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
                     lastMove = move.from to move.to
                 )
                 checkGameOver()
-            } else {
-                _state.value = _state.value.copy(engineThinking = false)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(
+                    engineThinking = false,
+                    status = GameStatus.ENGINE_ERROR,
+                    errorMessage = "applyUci(${uci}): ${t.javaClass.simpleName}: ${t.message}"
+                )
             }
-        } catch (e: Exception) {
-            _state.value = _state.value.copy(
-                engineThinking = false,
-                status = GameStatus.ENGINE_ERROR,
-                errorMessage = e.javaClass.simpleName + ": " + (e.message ?: "null")
-            )
+        } else {
+            _state.value = _state.value.copy(engineThinking = false)
         }
     }
 
