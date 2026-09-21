@@ -139,8 +139,20 @@ class GameViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun checkGameOver() {
         val s = _state.value
-        if (s.board.halfMoveClock >= 100) {
-            _state.value = s.copy(status = GameStatus.DRAW)
+        when {
+            s.board.halfMoveClock >= 100 -> {
+                _state.value = s.copy(status = GameStatus.DRAW)
+            }
+            !engine.hasLegalMoves(s.board) -> {
+                if (engine.isInCheck(s.board)) {
+                    // The side to move is checkmated — the other side wins
+                    val winner = if (s.board.whiteToMove) GameStatus.BLACK_WIN else GameStatus.WHITE_WIN
+                    _state.value = s.copy(status = winner)
+                } else {
+                    _state.value = s.copy(status = GameStatus.DRAW)
+                }
+                timerJob?.cancel()
+            }
         }
     }
 

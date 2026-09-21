@@ -99,6 +99,12 @@ data class EngineMove(
 
 class KotlinChessEngine {
 
+    // Returns true if the side to move has at least one legal move
+    fun hasLegalMoves(board: ChessBoard): Boolean = generateMoves(board).isNotEmpty()
+
+    // Returns true if the side to move is in check
+    fun isInCheck(board: ChessBoard): Boolean = inCheck(board, board.whiteToMove)
+
     // Find best move at given skill level (0-20 mapped to depth 1-4)
     // Expert (skill 18-20) uses depth 4 with move ordering for stronger play
     // without the StackOverflowError risk of depth 5.
