@@ -264,20 +264,38 @@ class KotlinChessEngine {
 
     private fun genKingMoves(board: ChessBoard, r: Int, f: Int, moves: MutableList<EngineMove>) {
         genLeaperMoves(board, r, f, KING_DELTAS, moves)
-        // Castling — also verify the rook is actually on its starting square
+        // Castling — verify rook present, squares empty, and king doesn't pass through check
         val white = board.whiteToMove
         if (white && 'K' in board.castling && board.get(0,7) == Piece.ROOK
-                && board.get(0,5) == Piece.EMPTY && board.get(0,6) == Piece.EMPTY)
+                && board.get(0,5) == Piece.EMPTY && board.get(0,6) == Piece.EMPTY
+                && !inCheck(board, true)
+                && !squareAttacked(board, 0, 5, true) && !squareAttacked(board, 0, 6, true))
             moves.add(EngineMove(0, 4, 0, 6))
         if (white && 'Q' in board.castling && board.get(0,0) == Piece.ROOK
-                && board.get(0,1) == Piece.EMPTY && board.get(0,2) == Piece.EMPTY && board.get(0,3) == Piece.EMPTY)
+                && board.get(0,1) == Piece.EMPTY && board.get(0,2) == Piece.EMPTY && board.get(0,3) == Piece.EMPTY
+                && !inCheck(board, true)
+                && !squareAttacked(board, 0, 3, true) && !squareAttacked(board, 0, 2, true))
             moves.add(EngineMove(0, 4, 0, 2))
         if (!white && 'k' in board.castling && board.get(7,7) == -Piece.ROOK
-                && board.get(7,5) == Piece.EMPTY && board.get(7,6) == Piece.EMPTY)
+                && board.get(7,5) == Piece.EMPTY && board.get(7,6) == Piece.EMPTY
+                && !inCheck(board, false)
+                && !squareAttacked(board, 7, 5, false) && !squareAttacked(board, 7, 6, false))
             moves.add(EngineMove(7, 4, 7, 6))
         if (!white && 'q' in board.castling && board.get(7,0) == -Piece.ROOK
-                && board.get(7,1) == Piece.EMPTY && board.get(7,2) == Piece.EMPTY && board.get(7,3) == Piece.EMPTY)
+                && board.get(7,1) == Piece.EMPTY && board.get(7,2) == Piece.EMPTY && board.get(7,3) == Piece.EMPTY
+                && !inCheck(board, false)
+                && !squareAttacked(board, 7, 3, false) && !squareAttacked(board, 7, 2, false))
             moves.add(EngineMove(7, 4, 7, 2))
+    }
+
+    // Returns true if the given square is attacked by any enemy piece (whiteKing = the side that owns the square)
+    private fun squareAttacked(board: ChessBoard, rank: Int, file: Int, whiteOwner: Boolean): Boolean {
+        // Temporarily place a king on the square and use inCheck logic
+        val original = board.get(rank, file)
+        board.setInternal(rank, file, if (whiteOwner) Piece.KING else -Piece.KING)
+        val attacked = inCheck(board, whiteOwner)
+        board.setInternal(rank, file, original)
+        return attacked
     }
 
     private fun inCheck(board: ChessBoard, whiteKing: Boolean): Boolean {
