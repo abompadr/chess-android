@@ -264,15 +264,19 @@ class KotlinChessEngine {
 
     private fun genKingMoves(board: ChessBoard, r: Int, f: Int, moves: MutableList<EngineMove>) {
         genLeaperMoves(board, r, f, KING_DELTAS, moves)
-        // Castling
+        // Castling — also verify the rook is actually on its starting square
         val white = board.whiteToMove
-        if (white && 'K' in board.castling && board.get(0,5) == Piece.EMPTY && board.get(0,6) == Piece.EMPTY)
+        if (white && 'K' in board.castling && board.get(0,7) == Piece.ROOK
+                && board.get(0,5) == Piece.EMPTY && board.get(0,6) == Piece.EMPTY)
             moves.add(EngineMove(0, 4, 0, 6))
-        if (white && 'Q' in board.castling && board.get(0,1) == Piece.EMPTY && board.get(0,2) == Piece.EMPTY && board.get(0,3) == Piece.EMPTY)
+        if (white && 'Q' in board.castling && board.get(0,0) == Piece.ROOK
+                && board.get(0,1) == Piece.EMPTY && board.get(0,2) == Piece.EMPTY && board.get(0,3) == Piece.EMPTY)
             moves.add(EngineMove(0, 4, 0, 2))
-        if (!white && 'k' in board.castling && board.get(7,5) == Piece.EMPTY && board.get(7,6) == Piece.EMPTY)
+        if (!white && 'k' in board.castling && board.get(7,7) == -Piece.ROOK
+                && board.get(7,5) == Piece.EMPTY && board.get(7,6) == Piece.EMPTY)
             moves.add(EngineMove(7, 4, 7, 6))
-        if (!white && 'q' in board.castling && board.get(7,1) == Piece.EMPTY && board.get(7,2) == Piece.EMPTY && board.get(7,3) == Piece.EMPTY)
+        if (!white && 'q' in board.castling && board.get(7,0) == -Piece.ROOK
+                && board.get(7,1) == Piece.EMPTY && board.get(7,2) == Piece.EMPTY && board.get(7,3) == Piece.EMPTY)
             moves.add(EngineMove(7, 4, 7, 2))
     }
 

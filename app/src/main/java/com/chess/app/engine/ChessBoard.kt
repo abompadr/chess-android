@@ -83,6 +83,7 @@ class ChessBoard {
         val move = Move.fromUci(uci)
         val piece = board[move.from.rank][move.from.file]
         val absPiece = Math.abs(piece)
+        val captured = board[move.to.rank][move.to.file]  // save before overwriting
 
         // En passant capture
         if (absPiece == Piece.PAWN && move.to == enPassant) {
@@ -113,7 +114,7 @@ class ChessBoard {
         if (move.from == Square(7,0) || move.to == Square(7,0)) castling = castling.replace("q","")
         if (move.from == Square(7,7) || move.to == Square(7,7)) castling = castling.replace("k","")
 
-        halfMoveClock = if (absPiece == Piece.PAWN || board[move.to.rank][move.to.file] != Piece.EMPTY) 0 else halfMoveClock + 1
+        halfMoveClock = if (absPiece == Piece.PAWN || captured != Piece.EMPTY) 0 else halfMoveClock + 1
         if (!whiteToMove) fullMoveNumber++
         whiteToMove = !whiteToMove
         moveHistory.add(uci)
